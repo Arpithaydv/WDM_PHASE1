@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CSE5335_AssignmentI</title>
+  <meta name="viewport" content="initial-scale=1.0">
+  <meta charset="utf-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDjUvybepOmVRKJqCe2cucvHEF_ZoHak-c"></script>
+  <style>
+    #map {
+      height:420px;
+      width:600px;
+    }
+    .infoWindowContent {
+      font-size:  14px !important;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+    h2 {
+      margin-bottom:0;
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+<div ng-app="myApp" ng-controller="dataCntrl">
+  <button ng-click="myFunc()">DATA</button>
+  <table class="table table-bordered">
+    <tr>
+      <td> State </td>
+      <td> Population </td>
+      <td> Latittude </td>
+      <td> Longitude </td>
+    <tr ng-repeat="x in names">
+      <td>{{ x.Name }}</td>
+      <td>{{ x.Population }}</td>
+      <td>{{x.lat}}</td>
+      <td>{{x.long}}</td>
+    </tr>
+  </table>
+  <div id="top_x_div" style="width: 900px; height: 500px;"></div>
+  <div id="map"></div>
+</div>
+
+
+<script>
+  var app = angular.module('myApp', []);
+  app.controller('dataCntrl',['$scope','$http', function($scope, $http) {
+    $scope.myFunc = function() {
+      $http.get('data.json')
+              .then(function (response) {$scope.names = response.data.records;
+
+                //google chart
+                google.charts.load('current', {'packages':['bar']});
+                google.charts.setOnLoadCallback(drawStuff);
+
+                function drawStuff() {
+                  var data = new google.visualization.arrayToDataTable([
+                    ['State', 'Population'],
+                    [response.data.records[0].Name, response.data.records[0].Population],
+                    [response.data.records[1].Name, response.data.records[1].Population],
+                    [response.data.records[2].Name, response.data.records[2].Population],
+                    [response.data.records[3].Name, response.data.records[3].Population],
+                    [response.data.records[4].Name, response.data.records[4].Population],
+                    [response.data.records[5].Name, response.data.records[5].Population],
+                    [response.data.records[6].Name, response.data.records[6].Population],
+                    [response.data.records[7].Name, response.data.records[7].Population],
+                    [response.data.records[8].Name, response.data.records[8].Population],
+                    [response.data.records[9].Name, response.data.records[9].Population]
+                  ]);
+
+                  var options = {
+                    title: 'Population',
+                    width: 900,
+                    legend: { position: 'center' },
+                    chart: { subtitle: 'Based on states in USA' },
+                    axes: {
+                      x: {
+                        0: { side: 'top', label: 'State'} // Top x-axis.
+                      }
+                    },
+                    bar: { groupWidth: "90%" }
+                  };
+
+                  var chart = new google.charts.Bar(document.getElementById('top_x_div'));
+                  // Convert the Classic options to Material options.
+                  chart.draw(data, google.charts.Bar.convertOptions(options));
+                };
+                //google maps
+                var mapOptions = {
+                  zoom: 4,
+                  scrollwheel: false,
+                  center: new google.maps.LatLng(40.0000, -98.0000),
+                  mapTypeId: google.maps.MapTypeId.TERRAIN
+                }
+
+                $scope.map = new google.maps.Map(document.getElementById('map'), mapOptions);
+                $scope.markers = [];
+                var infoWindow = new google.maps.InfoWindow();
+                var createMarker = function (info){
+
+                  var marker = new google.maps.Marker({
+                    map: $scope.map,
+                    position: new google.maps.LatLng(info.lat, info.long),
+                    title: info.Name
+                  });
+                  marker.content = '<div class="infoWindowContent">' +"Population:" + info.Population + '</div>';
+
+                  google.maps.event.addListener(marker, 'click', function(){
+                    infoWindow.setContent('<h2>' + marker.title + '</h2>' + marker.content);
+                    infoWindow.open($scope.map, marker);
+                  });
+
+                  $scope.markers.push(marker);
+
+                }
+
+                for (i = 0; i < response.data.records.length; i++){
+                  createMarker(response.data.records[i]);
+                }
+                $scope.openInfoWindow = function(e, selectedMarker){
+                  e.preventDefault();
+                  google.maps.event.trigger(selectedMarker, 'click');
+                }
+
+              });
+    };
+  }]);
+</script>
+
+</body>
+</html>
